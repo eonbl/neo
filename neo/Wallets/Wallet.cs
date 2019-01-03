@@ -279,6 +279,24 @@ namespace Neo.Wallets
             return tx;
         }
 
+        public Transaction MakeVote(UInt160 scriptHash, byte[] candidates)
+        {
+            return MakeTransaction(new StateTransaction
+            {
+                Version = 0,
+                Descriptors = new[]
+                {
+                    new StateDescriptor
+                    {
+                        Type = StateType.Account,
+                        Key = scriptHash.ToArray(),
+                        Field = "Votes",
+                        Value = candidates
+                    }
+                }
+            });
+        }
+
         public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
         {
             var cOutputs = outputs.Where(p => !p.IsGlobalAsset).GroupBy(p => new
