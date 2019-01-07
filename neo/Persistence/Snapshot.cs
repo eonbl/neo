@@ -276,16 +276,47 @@ namespace Neo.Persistence
         {
             Snapshot snapshot = Clone();
 
-            var registeredList = snapshot.Validators.Find()
+            IEnumerable<KeyValuePair<ECPoint, Fixed8>> registeredList = snapshot.Validators.Find()
                 .Select(p => p.Value).Where(p => p.Registered)
                 .Select(p => new KeyValuePair<ECPoint, Fixed8>(p.PublicKey, p.Votes));
             Dictionary<ECPoint, Fixed8> registeredDict = new Dictionary<ECPoint, Fixed8>();
             foreach (KeyValuePair <ECPoint, Fixed8> p in registeredList)
             {
-                registeredDict[p.Key] = p.Value;
+                registeredDict.Add(p.Key, p.Value);
             }
 
             return registeredDict;
+        }
+
+        public Dictionary<ECPoint, IEnumerable<UInt160>> GetSupporters()
+        {
+            Snapshot snapshot = Clone();
+
+            IEnumerable<KeyValuePair<UInt160, AccountState>> accounts = snapshot.Accounts.Find();
+            IEnumerable<ECPoint> pubKeys = snapshot.Validators.Find().Select(p => p.Value.PublicKey); // note this includes unregistered candidates
+
+            Dictionary<ECPoint, IEnumerable<UInt160>> allSupporters = new Dictionary<ECPoint, IEnumerable<UInt160>>();
+            foreach (ECPoint pubKey in pubKeys)
+            {
+                IEnumerable<UInt160> supporters = GetSupporters(accounts, pubKey);
+                allSupporters.Add(pubKey, supporters);
+            }
+
+            return allSupporters;
+        }
+
+        public IEnumerable<UInt160> GetSupporters(ECPoint pubKey)
+        {
+            Snapshot snapshot = Clone();
+
+            IEnumerable<KeyValuePair<UInt160, AccountState>> accounts = snapshot.Accounts.Find();
+
+            return GetSupporters(accounts, pubKey);
+        }
+
+        public IEnumerable<UInt160> GetSupporters(IEnumerable<KeyValuePair<UInt160, AccountState>> accounts, ECPoint pubKey)
+        {
+            return accounts.Where(p => p.Value.Votes.Contains(pubKey)).Select(p => p.Value.ScriptHash);
         }
     }
 }
