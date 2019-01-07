@@ -270,6 +270,8 @@ namespace Neo.Persistence
             return result.OrderBy(p => p);
         }
 
+        // Get a dictionary of the nominated candidates (including those who have not yet received votes)
+        // and the number of votes they've received
         public Dictionary<ECPoint, Fixed8> GetRegisteredVotes()
         {
             Snapshot snapshot = Clone();
