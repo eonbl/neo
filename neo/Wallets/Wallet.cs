@@ -1,5 +1,7 @@
-﻿using Neo.Cryptography;
+﻿using Akka.Actor;
+using Neo.Cryptography;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
@@ -279,11 +281,33 @@ namespace Neo.Wallets
             return tx;
         }
 
-        public Transaction MakeVote(UInt160 scriptHash, byte[] candidates)
+        //public Transaction MakeVote(UInt160 scriptHash, byte[] candidates)
+        //{
+        //    return new StateTransaction
+        //    {
+        //        Version = 0,
+        //        Inputs = new CoinReference[0],
+        //        Outputs = new TransactionOutput[0],
+        //        Descriptors = new[]
+        //        {
+        //            new StateDescriptor
+        //            {
+        //                Type = StateType.Account,
+        //                Key = scriptHash.ToArray(),
+        //                Field = "Votes",
+        //                Value = candidates
+        //            }
+        //        }
+        //    };
+        //}
+
+        public bool Vote(NeoSystem system, UInt160 scriptHash, byte[] candidates)
         {
-            return MakeTransaction(new StateTransaction
+            Transaction tx = new StateTransaction
             {
                 Version = 0,
+                Inputs = new CoinReference[0],
+                Outputs = new TransactionOutput[0],
                 Descriptors = new[]
                 {
                     new StateDescriptor
@@ -294,7 +318,23 @@ namespace Neo.Wallets
                         Value = candidates
                     }
                 }
-            });
+            };
+
+            ContractParametersContext context = new ContractParametersContext(tx);
+            Sign(context);
+            if (context.Completed)
+            {
+                tx.Witnesses = context.GetWitnesses();
+                ApplyTransaction(tx);
+                system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                Console.WriteLine($"Transaction successful\nTXID: {tx.Hash}");
+            }
+            else
+            {
+                Console.WriteLine("Incompleted signature\nSignatureContext:");
+                Console.WriteLine(context.ToString());
+            }
+            return true;
         }
 
         public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
