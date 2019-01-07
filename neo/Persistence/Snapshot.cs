@@ -269,5 +269,21 @@ namespace Neo.Persistence
             }
             return result.OrderBy(p => p);
         }
+
+        public Dictionary<ECPoint, Fixed8> GetRegisteredVotes()
+        {
+            Snapshot snapshot = Clone();
+
+            var registeredList = snapshot.Validators.Find()
+                .Select(p => p.Value).Where(p => p.Registered)
+                .Select(p => new KeyValuePair<ECPoint, Fixed8>(p.PublicKey, p.Votes));
+            Dictionary<ECPoint, Fixed8> registeredDict = new Dictionary<ECPoint, Fixed8>();
+            foreach (KeyValuePair <ECPoint, Fixed8> p in registeredList)
+            {
+                registeredDict[p.Key] = p.Value;
+            }
+
+            return registeredDict;
+        }
     }
 }
