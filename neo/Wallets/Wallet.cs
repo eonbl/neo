@@ -281,33 +281,11 @@ namespace Neo.Wallets
             return tx;
         }
 
-        //public Transaction MakeVote(UInt160 scriptHash, byte[] candidates)
-        //{
-        //    return new StateTransaction
-        //    {
-        //        Version = 0,
-        //        Inputs = new CoinReference[0],
-        //        Outputs = new TransactionOutput[0],
-        //        Descriptors = new[]
-        //        {
-        //            new StateDescriptor
-        //            {
-        //                Type = StateType.Account,
-        //                Key = scriptHash.ToArray(),
-        //                Field = "Votes",
-        //                Value = candidates
-        //            }
-        //        }
-        //    };
-        //}
-
         public bool Vote(NeoSystem system, UInt160 scriptHash, byte[] candidates)
         {
-            Transaction tx = new StateTransaction
+            Transaction tx = MakeTransaction(new StateTransaction
             {
                 Version = 0,
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
                 Descriptors = new[]
                 {
                     new StateDescriptor
@@ -318,8 +296,7 @@ namespace Neo.Wallets
                         Value = candidates
                     }
                 }
-            };
-
+            });
             ContractParametersContext context = new ContractParametersContext(tx);
             Sign(context);
             if (context.Completed)
